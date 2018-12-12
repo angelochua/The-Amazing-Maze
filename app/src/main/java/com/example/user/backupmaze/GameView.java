@@ -1,13 +1,21 @@
 package com.example.user.backupmaze;
 
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import org.w3c.dom.Attr;
 
@@ -15,11 +23,16 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Stack;
 
-public class GameView extends View {
+public class GameView extends View implements SensorEventListener{
+
+
 
     private enum Direction{
         UP, DOWN, LEFT, RIGHT
     }
+
+    private int score;
+    public int count;
 
     private Cell[][] cells;
     private static final int COLS = 7, ROWS = 10;
@@ -28,8 +41,14 @@ public class GameView extends View {
 
     private float cellSize, hMargin, vMargin;
     private Paint wallPaint, playerPaint, exitPaint;
+    private float sensorX, sensorY, sensorZ;
+    private Direction direction;
+
 
     private Random random;
+
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
 
     public GameView(Context context, @Nullable AttributeSet attrs) {
 
@@ -40,14 +59,52 @@ public class GameView extends View {
         wallPaint.setStrokeWidth(6);
 
         playerPaint = new Paint();
-        playerPaint.setColor(Color.RED);
+        playerPaint.setColor(Color.LTGRAY);
 
         exitPaint = new Paint();
-        exitPaint.setColor(Color.LTGRAY);
+        exitPaint.setColor(Color.GREEN);
 
         random = new Random();
+        sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+
+
 
         createMaze();
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        sensorX = event.values[0];
+        sensorY = event.values[1];
+      //  sensorZ = event.values[2];
+
+       // Log.d("X Y Z", "x=" + sensorX + " y=" + sensorY + " z=" + sensorZ);
+        float x, y;
+        x = Math.abs(sensorX);
+        y = Math.abs(sensorY);
+
+
+        if(x > y){
+            if(sensorX > 0)
+                direction = Direction.LEFT;
+            else
+                direction = Direction.RIGHT;
+        }else{
+            if(sensorY > 0)
+                direction = Direction.DOWN;
+            else
+                direction = Direction.UP;
+
+        }
+        movePlayer(direction);
+
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
     }
 
     public Cell getNeighbour(Cell cell){
@@ -134,8 +191,12 @@ public class GameView extends View {
         }while(!stack.isEmpty());
     }
 
+
+
     protected void onDraw(Canvas canvas){
-        canvas.drawColor(Color.GREEN);
+        canvas.drawBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.game_bg),0,0,null);
+
+
 
         int width = getWidth();
         int height = getHeight();
@@ -181,6 +242,9 @@ public class GameView extends View {
     }
 
     public void movePlayer(Direction direction){
+
+
+
         switch (direction){
             case UP:
                 if(!player.topWall)
@@ -199,8 +263,23 @@ public class GameView extends View {
                     player = cells[player.col+1][player.row];
                 break;
         }
-
+        
+        checkWin();
         invalidate();
+    }
+
+    private void checkWin(){
+        if(player == exit) {
+            if(count != 10) {
+                count++;
+                score += 10;
+                Toast.makeText(getContext(), "Current score: " + score, Toast.LENGTH_LONG).show();
+                createMaze();
+            }
+            else{
+
+            }
+        }
     }
 
     @Override

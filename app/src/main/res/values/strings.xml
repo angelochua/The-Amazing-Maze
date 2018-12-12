@@ -1,3 +1,6 @@
 <resources>
-    <string name="app_name">BackUpMaze</string>
+    <string name="app_name">The Amazing Maze</string>
+    <string name="goal">Welcome! The goal of the game is for the gray box to navigate the maze and
+        reach the green box with the use of tilting or by swiping.
+        Upon reaching the green box, the map will automatically refresh and design a new map. Good luck and Enjoy!</string>
 </resources>
